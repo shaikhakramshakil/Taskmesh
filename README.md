@@ -1,4 +1,5 @@
 # TaskMesh
+**Live demo:** https://shaikhakramshakil-taskmesh-demo.static.hf.space (scripted in-browser dataset, no backend needed)
 
 A resource-aware distributed job scheduling platform: thousands of competing jobs,
 limited workers, and an explicit, experimentally-compared answer to
