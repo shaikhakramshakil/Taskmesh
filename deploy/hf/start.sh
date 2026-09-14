@@ -3,6 +3,9 @@
 # Kafka/Redis stay OFF (noop beans via env below); Postgres is the whole
 # state story. Data is ephemeral. Serves UI + API on $LISTEN_PORT (7860).
 set -e
+# Render injects $PORT; default keeps local/HF behavior on 7860.
+PORT="${PORT:-7860}"
+sed -i "s/listen 7860;/listen $PORT;/" /etc/nginx/conf.d/taskmesh.conf
 
 export PGDATA=/tmp/pgdata
 DB=taskmesh

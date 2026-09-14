@@ -1,0 +1,9 @@
+# Render one-click blueprint. Free Docker web service; Postgres runs inside
+# the container with Kafka/Redis off (see deploy/hf/start.sh).
+services:
+  - type: web
+    name: taskmesh
+    runtime: docker
+    dockerfilePath: ./deploy/render/Dockerfile
+    plan: free
+    healthCheckPath: /api/v1/summary
