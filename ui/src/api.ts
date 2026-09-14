@@ -1,3 +1,5 @@
+import * as demo from './demo/engine.ts';
+
 export type JobStatus =
   | 'QUEUED'
   | 'ASSIGNED'
@@ -147,7 +149,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return JSON.parse(text) as T;
 }
 
-export const api = {
+const liveApi = {
   listJobs(status?: string, limit = 50): Promise<JobView[]> {
     const q = new URLSearchParams({ limit: String(limit) });
     if (status) q.set('status', status);
@@ -184,6 +186,49 @@ export const api = {
     return request<SummaryView>('/api/v1/summary');
   }
 };
+export const DEMO_MODE: boolean = import.meta.env.VITE_DEMO === '1';
+
+/**
+ * Offline demo backend (Static Space build). Same signatures, scripted
+ * in-memory cluster — see ./demo/engine.ts. Production builds use fetch.
+ */
+const demoApi = {
+  listJobs: (status?: string, limit = 50) => Promise.resolve(demo.listJobs(status, limit)),
+  submitJob: (body: SubmitJobRequest) => {
+    try {
+      return Promise.resolve(demo.submitJob(body));
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  },
+  cancelJob: (id: string) => {
+    try {
+      return Promise.resolve(demo.cancelJob(id));
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  },
+  listWorkers: () => Promise.resolve(demo.listWorkers()),
+  getQueue: () => Promise.resolve(demo.getQueue()),
+  getStrategies: () => Promise.resolve(demo.getStrategies()),
+  setActiveStrategy: (name: string) => {
+    try {
+      return Promise.resolve(demo.setActiveStrategy(name));
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  },
+  simulate: (body: SimulateRequest) => {
+    try {
+      return Promise.resolve(demo.simulate(body));
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  },
+  getSummary: () => Promise.resolve(demo.getSummary()),
+};
+
+export const api = DEMO_MODE ? demoApi : liveApi;
 
 export function resultAvg(r: SimulationResult): number {
   return r.avgLatencyTicks;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api, type StrategiesView, type SummaryView } from './api.ts';
+import { DEMO_MODE, api, type StrategiesView, type SummaryView } from './api.ts';
 import JobsView from './views/JobsView.tsx';
 import WorkersView from './views/WorkersView.tsx';
 import SimulatorView from './views/SimulatorView.tsx';
@@ -149,6 +149,11 @@ export default function App() {
             </div>
 
             <div className="nav-actions">
+              {DEMO_MODE && (
+                <span className="tab-badge" title="Scripted in-memory dataset; no backend connected">
+                  DEMO DATA
+                </span>
+              )}
               <button
                 className="button-app-sm"
                 onClick={() => setTab('architecture')}
