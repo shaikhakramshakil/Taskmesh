@@ -1,4 +1,8 @@
 # TaskMesh
+
+[![CI](https://github.com/shaikhakramshakil/Taskmesh/actions/workflows/ci.yml/badge.svg)](https://github.com/shaikhakramshakil/Taskmesh/actions)
+[![Java 21](https://img.shields.io/badge/Java-21-blue)](https://aws.amazon.com/corretto/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 **Live demo:** https://shaikhakramshakil-taskmesh-demo.static.hf.space (scripted in-browser dataset, no backend needed)
 
 A resource-aware distributed job scheduling platform: thousands of competing jobs,
