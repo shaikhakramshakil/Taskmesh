@@ -1,0 +1,13 @@
+spring:
+  main:
+    web-application-type: none
+
+taskmesh:
+  server-url: ${TASKMESH_SERVER_URL:http://localhost:8080}
+  worker:
+    id: ${WORKER_ID:}
+    address: ${WORKER_ADDRESS:}
+    cpu: ${WORKER_CPU:4}
+    memory-mb: ${WORKER_MEM_MB:8192}
+    failure-rate: ${WORKER_FAILURE_RATE:0}
+    heartbeat-interval-ms: 2000

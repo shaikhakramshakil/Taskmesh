@@ -1,0 +1,148 @@
+name: taskmesh
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: taskmesh
+      POSTGRES_USER: taskmesh
+      POSTGRES_PASSWORD: taskmesh
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskmesh -d taskmesh"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  kafka:
+    image: apache/kafka:3.8.0
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      CLUSTER_ID: 12345678-90ab-cdef-1234-567890abcdef
+      KAFKA_HEAP_OPTS: -Xmx512M -Xms512M
+    volumes:
+      - kafkadata:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  taskmesh-server:
+    image: taskmesh-server
+    build:
+      context: .
+      dockerfile: ./backend/taskmesh-server/Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      PORT: 8080
+      DB_URL: jdbc:postgresql://postgres:5432/taskmesh
+      DB_USER: taskmesh
+      DB_PASS: taskmesh
+      REDIS_HOST: redis
+      KAFKA_BOOTSTRAP: kafka:9092
+      TASKMESH_QUEUE_THRESHOLD: 500
+      TASKMESH_STRATEGY: resource
+      TASKMESH_DISPATCH_INTERVAL_MS: 250
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/8080'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+
+  # Two identical replicas. WORKER_ID is intentionally unset so each replica
+  # derives a distinct stable id from its container hostname (per api.md:
+  # "stable id from config, e.g. hostname-PID"), keeping the two
+  # registrations distinct despite sharing the rest of the env.
+  taskmesh-worker:
+    image: taskmesh-worker
+    build:
+      context: .
+      dockerfile: ./backend/taskmesh-worker/Dockerfile
+    deploy:
+      replicas: 2
+    depends_on:
+      taskmesh-server:
+        condition: service_started
+    environment:
+      TASKMESH_SERVER_URL: http://taskmesh-server:8080
+      WORKER_CPU: 4
+      WORKER_MEM_MB: 8192
+      WORKER_FAILURE_RATE: 0
+
+  taskmesh-ui:
+    image: taskmesh-ui
+    build:
+      context: .
+      dockerfile: ./ui/Dockerfile
+    ports:
+      - "8081:80"
+    depends_on:
+      taskmesh-server:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheusdata:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./deploy/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./deploy/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./deploy/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafanadata:/var/lib/grafana
+    depends_on:
+      prometheus:
+        condition: service_started
+
+volumes:
+  pgdata:
+  kafkadata:
+  prometheusdata:
+  grafanadata:

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.16</version>
+        <relativePath/>
+    </parent>
+    <groupId>io.taskmesh</groupId>
+    <artifactId>taskmesh-parent</artifactId>
+    <version>0.1.0</version>
+    <packaging>pom</packaging>
+    <name>TaskMesh</name>
+    <description>Resource-aware distributed job scheduling platform</description>
+    <modules>
+        <module>taskmesh-domain</module>
+        <module>taskmesh-server</module>
+        <module>taskmesh-worker</module>
+        <module>taskmesh-simulator</module>
+    </modules>
+    <properties>
+        <java.version>21</java.version>
+        <maven.compiler.release>21</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <junit.version>5.14.2</junit.version>
+        <!-- Boot manages 11.7.2, which rejects newer PG15 patches (Unsupported Database). -->
+        <flyway.version>11.20.3</flyway.version>
+    </properties>
+</project>
